@@ -1,7 +1,7 @@
 import { Express } from "express";
-import usersRoute from "../routes/userRouter";
-import postsRoute from "../routes/postRouter";
-import authRoute from "../routes/authRouter";
+import usersRoute from "../routes/userRoutes";
+import postsRoute from "../routes/postRoutes";
+import authRoute from "../routes/authRoutes";
 
 export const configRoutes = (app: Express) => {
   app.use("/users", usersRoute);
