@@ -8,6 +8,21 @@ export class BaseController<ModelType> {
     this.model = model;
   }
 
+  async get(req: Request, res: Response) {
+    try {
+      if (req.query.name) {
+        const entities = await this.model.find({ name: req.query.name });
+        res.send(entities);
+      } else {
+        const entities = await this.model.find();
+        res.send(entities);
+      }
+    } catch (err: any) {
+      logger.error("error get all", err);
+      res.status(500).json({ message: err.message });
+    }
+  }
+
   async getById(req: Request, res: Response) {
     try {
       const entity = await this.model.findById(req.params.id);
