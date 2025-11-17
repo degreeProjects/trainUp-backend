@@ -35,6 +35,7 @@ export interface IPost {
   type: TrainingType;
   description: string;
   image: string;
+  city: string;
   user: string;
   comments: Array<IComment>;
 }
@@ -53,6 +54,10 @@ const postSchema = new mongoose.Schema<IPost>(
     image: {
       type: String,
       required: false,
+    },
+    city: {
+      type: String,
+      required: true,
     },
     user: {
       type: String,
