@@ -20,6 +20,7 @@ import authMiddleware from "../middlewares/authMiddleware";
  *         - email
  *         - password
  *         - fullName
+ *         - homeCity
  *       properties:
  *         email:
  *           type: string
@@ -30,9 +31,13 @@ import authMiddleware from "../middlewares/authMiddleware";
  *         fullName:
  *           type: string
  *           description: The user fullName
+ *         homeCity:
+ *           type: string
+ *           description: The user home city
  *       example:
  *         email: 'user@gmail.com'
  *         fullName: 'Lionel Messi'
+ *         homeCity: 'Tel Aviv'
  *         password: '123456789'
  */
 
