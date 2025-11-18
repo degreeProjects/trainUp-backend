@@ -30,6 +30,7 @@ const router = express.Router();
  *         - email
  *         - password
  *         - fullName
+ *         - homeCity
  *       properties:
  *         email:
  *           type: string
@@ -44,6 +45,7 @@ const router = express.Router();
  *         email: 'maccabi@gmail.com'
  *         password: '24680'
  *         fullName: 'Ben Idan'
+ *         homeCity: 'Tel Aviv'
  */
 
 /**

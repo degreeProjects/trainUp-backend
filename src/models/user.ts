@@ -4,7 +4,7 @@ export interface IUser {
   _id?: string;
   email: string;
   password: string;
-  fullName?: string;
+  fullName: string;
   homeCity?: string;
   profileImage?: string;
   refreshTokens?: Array<string>;

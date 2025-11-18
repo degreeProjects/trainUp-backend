@@ -46,7 +46,7 @@ const uploadFile = multer({
 const handleSingleUploadFile = async (
   req: Request,
   res: Response
-): Promise<{ file?: Express.Multer.File; body: unknown }> => {
+): Promise<{ file: Express.Multer.File | undefined; body: unknown }> => {
   return new Promise((resolve, reject): void => {
     uploadFile(req, res, (error) => {
       if (error) {
