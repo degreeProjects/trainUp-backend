@@ -10,7 +10,9 @@ import { OAuth2Client } from "google-auth-library";
 const client = new OAuth2Client();
 
 const register = async (req: Request, res: Response) => {
-  let uploadResult: { file?: Express.Multer.File; body: unknown } | undefined;
+  let uploadResult:
+    | { file: Express.Multer.File | undefined; body: unknown }
+    | undefined;
 
   try {
     uploadResult = await handleSingleUploadFile(req, res);
@@ -105,7 +107,7 @@ const loginByGoogle = async (req: Request, res: Response) => {
   try {
     const ticket = await client.verifyIdToken({
       idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID,
+      audience: config.googleClientId,
     });
 
     const payload = ticket.getPayload();
