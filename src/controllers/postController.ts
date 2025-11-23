@@ -4,6 +4,7 @@ import { Request, Response } from "express";
 import { AuthRequest } from "../middlewares/authMiddleware";
 import { logger } from "../config/logger";
 import { handleSingleUploadFile } from "../utils/uploadFile";
+import { TrainingTypes } from "../models/post";
 
 class PostsController extends BaseController<IPost> {
   constructor() {
@@ -96,6 +97,15 @@ class PostsController extends BaseController<IPost> {
       res.send(posts);
     } catch (err: any) {
       logger.error("error while trying to get posts by user id");
+      res.status(500).json({ message: err.message });
+    }
+  }
+
+  async getTrainingTypes(_req: Request, res: Response) {
+    try {
+      res.send(TrainingTypes);
+    } catch (err: any) {
+      logger.error("error while trying to get training types");
       res.status(500).json({ message: err.message });
     }
   }

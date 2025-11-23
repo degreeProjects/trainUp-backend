@@ -179,6 +179,27 @@ router.get(
 
 /**
  * @swagger
+ * /posts/trainingTypes:
+ *   get:
+ *     summary: get all training types
+ *     tags: [Posts]
+ *     responses:
+ *       200:
+ *         description: array of the training types
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Post'
+ *       500:
+ *         description: Unexpected error
+ */
+router.get(
+  "/training/types",
+  postsController.getTrainingTypes.bind(postsController)
+);
+
+/**
+ * @swagger
  * /posts:
  *   post:
  *     summary: create post
