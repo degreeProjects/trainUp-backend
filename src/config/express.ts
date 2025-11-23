@@ -9,8 +9,9 @@ export const configExpress = (app: Express) => {
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(cors());
-  app.use(expressStatic(path.join(__dirname, "../../public")));
 
   configRoutes(app);
   configSwagger(app);
+
+  app.use(expressStatic(path.join(__dirname, "../../public")));
 };
