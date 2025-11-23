@@ -83,6 +83,30 @@ class PostsController extends BaseController<IPost> {
     }
   }
 
+  async getByCityAndType(req: Request, res: Response) {
+    const city = req.query.city as string | undefined;
+    const type = req.query.type as string | undefined;
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.pageSize) || 10;
+
+    const filter: any = {};
+    if (city && city !== "all") filter.city = city;
+    if (type && type !== "all") filter.type = type;
+
+    try {
+      const posts = await this.model
+        .find(filter)
+        .limit(limit)
+        .skip((page - 1) * limit)
+        .sort({ createdAt: -1 })
+        .populate("user");
+      res.send(posts);
+    } catch (err: any) {
+      logger.error("error while trying to get posts by city and type");
+      res.status(500).json({ message: err.message });
+    }
+  }
+
   async getByMe(req: AuthRequest, res: Response) {
     const page = Number(req.query?.page) || 1;
     const limit = Number(req.query?.pageSize) || 10;

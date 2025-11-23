@@ -143,6 +143,51 @@ router.get("/city/:city", postsController.getByCity.bind(postsController));
 
 /**
  * @swagger
+ * /posts/search/cityAndType?city={city}&type={type}&page={page}&pageSize={pageSize}:
+ *   get:
+ *     summary: get posts by city and type
+ *     tags: [Posts]
+ *     parameters:
+ *       - in: query
+ *         name: city
+ *         schema:
+ *           type: String
+ *         description: the city of the training
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: String
+ *         description: the type of the training
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         description: page number for paginated results
+ *       - in: query
+ *         name: pageSize
+ *         schema:
+ *           type: integer
+ *         description: page size for paginated results
+ *     responses:
+ *       200:
+ *         description: list of posts with the city and types
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 allOf:
+ *                   - $ref: '#/components/schemas/Post'
+ *       500:
+ *         description: Unexpected error
+ */
+router.get(
+  "/search/cityAndType",
+  postsController.getByCityAndType.bind(postsController)
+);
+
+/**
+ * @swagger
  * /posts/user/me?page={page}&pageSize={pageSize}:
  *   get:
  *     summary: get posts uploaded by me
