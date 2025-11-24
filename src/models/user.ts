@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 export interface IUser {
   _id?: string;
   email: string;
-  password: string;
+  password?: string;
   fullName: string;
   homeCity?: string;
   profileImage?: string;
@@ -17,7 +17,6 @@ const userSchema = new mongoose.Schema<IUser>({
   },
   password: {
     type: String,
-    required: true,
   },
   fullName: {
     type: String,
