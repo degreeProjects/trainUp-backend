@@ -36,7 +36,7 @@ describe("Auth tests", () => {
     const response = await request(app)
       .post("/auth/register")
       .field("email", user.email + "1")
-      .field("password", user.password)
+      .field("password", user.password!!)
       .field("fullName", user.fullName!)
       .field("homeCity", user.homeCity!);
     expect(response.statusCode).toBe(201);
@@ -46,7 +46,7 @@ describe("Auth tests", () => {
     const response = await request(app)
       .post("/auth/register")
       .field("email", user.email)
-      .field("password", user.password)
+      .field("password", user.password!!)
       .field("fullName", user.fullName!)
       .field("homeCity", user.homeCity!)
       .attach("picture", testImage);
@@ -57,7 +57,7 @@ describe("Auth tests", () => {
     const response = await request(app)
       .post("/auth/register")
       .field("email", user.email)
-      .field("password", user.password)
+      .field("password", user.password!!)
       .field("fullName", user.fullName!)
       .field("homeCity", user.homeCity!)
       .attach("picture", testImage);
