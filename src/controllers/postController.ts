@@ -106,7 +106,7 @@ class PostsController extends BaseController<IPost> {
 
   async getTrainingTypes(_req: Request, res: Response) {
     try {
-      res.send(TrainingTypes);
+      res.status(200).send(TrainingTypes);
     } catch (err: any) {
       logger.error("error while trying to get training types");
       res.status(500).json({ message: err.message });
@@ -136,9 +136,10 @@ class PostsController extends BaseController<IPost> {
   async addLike(req: AuthRequest, res: Response) {
     try {
       const postId = req.params.postId;
-      const userId = String(req.query.userId);
+      const userId = req.query.userId;
 
-      if (!userId) return res.status(400).json({ error: "userId is required" });
+      if (!userId || userId.length === 0)
+        return res.status(400).json({ error: "userId is required" });
 
       const updatedPost = await this.model
         .findByIdAndUpdate(
@@ -161,7 +162,7 @@ class PostsController extends BaseController<IPost> {
   async removeLike(req: AuthRequest, res: Response) {
     try {
       const postId = req.params.postId;
-      const userId = String(req.query.userId);
+      const userId = req.query.userId;
 
       if (!userId) return res.status(400).json({ error: "userId is required" });
 
@@ -182,8 +183,6 @@ class PostsController extends BaseController<IPost> {
   async getLikedPostsByUser(req: AuthRequest, res: Response) {
     try {
       const userId = req.params.userId;
-      if (!userId) return res.status(400).json({ error: "userId is required" });
-
       const page = Number(req.query.page) || 1;
       const limit = Number(req.query.pageSize) || 10;
       const filter = { likes: userId };
