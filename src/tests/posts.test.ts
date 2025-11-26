@@ -125,6 +125,15 @@ describe("post tests", () => {
     expect(response.body).toHaveLength(2);
   });
 
+  test("TEST GET training types", async () => {
+    const response = await request(app)
+      .get("/posts/training/types")
+      .set("Authorization", "Bearer " + accessToken);
+
+    expect(response.statusCode).toBe(200);
+    expect(Array.isArray(response.body)).toBe(true);
+  });
+
   test("Test PUT post", async () => {
     const response = await request(app)
       .put(`/posts/${post._id}`)
@@ -145,6 +154,116 @@ describe("post tests", () => {
     expect(response.body).toHaveLength(1);
     expect(response.body[0].body).toBe("Wow nice abs");
     expect(response.body[0].user._id).toBe(user._id);
+  });
+
+  test("Should add like to the post", async () => {
+    const response = await request(app)
+      .put(`/posts/addLike/${post._id}?userId=${user._id}`)
+      .set("Authorization", "Bearer " + accessToken);
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body.likes).toContain(user._id);
+    expect(response.body.likes.length).toBe(1);
+  });
+
+  test("Should NOT add duplicate like", async () => {
+    await request(app)
+      .put(`/posts/addLike/${post._id}?userId=${user._id}`)
+      .set("Authorization", "Bearer " + accessToken);
+
+    const response = await request(app)
+      .put(`/posts/addLike/${post._id}?userId=${user._id}`)
+      .set("Authorization", "Bearer " + accessToken);
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body.likes).toContain(user._id);
+    expect(response.body.likes.length).toBe(1);
+  });
+
+  test("Should return 400 if userId missing", async () => {
+    const response = await request(app)
+      .put(`/posts/addLike/${post._id}`)
+      .set("Authorization", "Bearer " + accessToken);
+
+    expect(response.statusCode).toBe(400);
+    expect(response.body.error).toBe("userId is required");
+  });
+
+  test("Should return 404 if post not found", async () => {
+    const fakePostId = "67692be5d2f5ecacb5d1aaaa";
+
+    const response = await request(app)
+      .put(`/posts/addLike/${fakePostId}?userId=${user._id}`)
+      .set("Authorization", "Bearer " + accessToken);
+
+    expect(response.statusCode).toBe(404);
+    expect(response.body.error).toBe("Post not found");
+  });
+
+  test("Should remove like from post", async () => {
+    await request(app)
+      .put(`/posts/addLike/${post._id}?userId=${user._id}`)
+      .set("Authorization", "Bearer " + accessToken);
+
+    const response = await request(app)
+      .put(`/posts/removeLike/${post._id}?userId=${user._id}`)
+      .set("Authorization", "Bearer " + accessToken);
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body.likes).not.toContain(user._id);
+    expect(response.body.likes.length).toBe(0);
+  });
+
+  test("Should work even if userId is not in likes", async () => {
+    await request(app)
+      .put(`/posts/addLike/${post._id}?userId=${user._id}`)
+      .set("Authorization", "Bearer " + accessToken);
+
+    const response = await request(app)
+      .put(`/posts/removeLike/${post._id}?userId=99999`)
+      .set("Authorization", "Bearer " + accessToken);
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body.likes).toHaveLength(1);
+    expect(response.body.likes).toContain(user._id);
+  });
+
+  test("Should return 400 if userId missing", async () => {
+    const response = await request(app)
+      .put(`/posts/removeLike/${post._id}`)
+      .set("Authorization", "Bearer " + accessToken);
+
+    expect(response.statusCode).toBe(400);
+    expect(response.body.error).toBe("userId is required");
+  });
+
+  test("Should return 404 if post not found", async () => {
+    const fakePostId = "67692be5d2f5ecacb5d1aaaa";
+
+    const response = await request(app)
+      .put(`/posts/removeLike/${fakePostId}?userId=${user._id}`)
+      .set("Authorization", "Bearer " + accessToken);
+
+    expect(response.statusCode).toBe(404);
+    expect(response.body.error).toBe("Post not found");
+  });
+
+  test("Should return posts liked by the user", async () => {
+    const response = await request(app)
+      .get(`/posts/likedPosts/${user._id}`)
+      .set("Authorization", "Bearer " + accessToken);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveLength(1);
+  });
+
+  test("Should return empty array when user has no liked posts", async () => {
+    const response = await request(app)
+      .get(`/posts/likedPosts/noSuchUser`)
+      .set("Authorization", "Bearer " + accessToken);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual([]);
   });
 
   test("Test DELETE post", async () => {
