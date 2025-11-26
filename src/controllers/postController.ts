@@ -62,27 +62,6 @@ class PostsController extends BaseController<IPost> {
     }
   }
 
-  async getByCity(req: Request, res: Response) {
-    const city = req.params.city;
-    const page = Number(req.query?.page) || 1;
-    const limit = Number(req.query?.pageSize) || 10;
-
-    const findFilter = city === "all" ? {} : { city };
-
-    try {
-      const posts = await this.model
-        .find(findFilter)
-        .limit(limit)
-        .skip((page - 1) * limit)
-        .sort({ createdAt: -1 })
-        .populate("user");
-      res.send(posts);
-    } catch (err: any) {
-      logger.error("error while trying to get posts by city");
-      res.status(500).json({ message: err.message });
-    }
-  }
-
   async getByCityAndType(req: Request, res: Response) {
     const city = req.query.city as string | undefined;
     const type = req.query.type as string | undefined;
@@ -151,6 +130,75 @@ class PostsController extends BaseController<IPost> {
     } catch (err: any) {
       logger.error("error while adding comment to a post");
       res.status(409).send("fail: " + err.message);
+    }
+  }
+
+  async addLike(req: AuthRequest, res: Response) {
+    try {
+      const postId = req.params.postId;
+      const userId = String(req.query.userId);
+
+      if (!userId) return res.status(400).json({ error: "userId is required" });
+
+      const updatedPost = await this.model
+        .findByIdAndUpdate(
+          postId,
+          { $addToSet: { likes: userId } },
+          { new: true }
+        )
+        .populate("user");
+
+      if (!updatedPost)
+        return res.status(404).json({ error: "Post not found" });
+
+      return res.status(200).json(updatedPost);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+
+  async removeLike(req: AuthRequest, res: Response) {
+    try {
+      const postId = req.params.postId;
+      const userId = String(req.query.userId);
+
+      if (!userId) return res.status(400).json({ error: "userId is required" });
+
+      const updatedPost = await this.model
+        .findByIdAndUpdate(postId, { $pull: { likes: userId } }, { new: true })
+        .populate("user");
+
+      if (!updatedPost)
+        return res.status(404).json({ error: "Post not found" });
+
+      return res.status(200).json(updatedPost);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+
+  async getLikedPostsByUser(req: AuthRequest, res: Response) {
+    try {
+      const userId = req.params.userId;
+      if (!userId) return res.status(400).json({ error: "userId is required" });
+
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.pageSize) || 10;
+      const filter = { likes: userId };
+
+      const likedPosts = await this.model
+        .find(filter)
+        .limit(limit)
+        .skip((page - 1) * limit)
+        .sort({ createdAt: -1 })
+        .populate("user");
+
+      return res.status(200).json(likedPosts);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Internal server error" });
     }
   }
 }

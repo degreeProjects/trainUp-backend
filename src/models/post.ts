@@ -38,6 +38,7 @@ export interface IPost {
   city: string;
   user: string;
   comments: Array<IComment>;
+  likes: Array<string>;
 }
 
 const postSchema = new mongoose.Schema<IPost>(
@@ -84,6 +85,16 @@ const postSchema = new mongoose.Schema<IPost>(
         },
       ],
       default: [],
+    },
+    likes: {
+      type: [
+        {
+          type: String,
+          ref: "User",
+        },
+      ],
+      default: [],
+      required: false,
     },
   },
   { timestamps: true }
