@@ -441,4 +441,37 @@ router.put(
   postsController.removeLike.bind(postsController)
 );
 
+/**
+ * @swagger
+ * /posts/likedPosts/{userId}:
+ *   get:
+ *     summary: get all posts that user liked
+ *     tags: [Posts]
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: Numeric ID of the user to get liked posts
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: all the liked posts
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Post'
+ *       400:
+ *         description: userId is required
+ *       500:
+ *          Internal server error
+ */
+router.get(
+  "/likedPosts/:userId",
+  authMiddleware,
+  postsController.getLikedPostsByUser.bind(postsController)
+);
+
 export default router;

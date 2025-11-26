@@ -155,48 +155,73 @@ class PostsController extends BaseController<IPost> {
   }
 
   async addLike(req: AuthRequest, res: Response) {
-  try {
-    const postId = req.params.postId;
-    const userId = String(req.query.userId);
+    try {
+      const postId = req.params.postId;
+      const userId = String(req.query.userId);
 
-    if (!userId) return res.status(400).json({ error: "userId is required" })
+      if (!userId) return res.status(400).json({ error: "userId is required" });
 
-    const updatedPost = await this.model.findByIdAndUpdate(
-      postId,
-      { $addToSet: { likes: userId } },
-      { new: true }
-    );
+      const updatedPost = await this.model
+        .findByIdAndUpdate(
+          postId,
+          { $addToSet: { likes: userId } },
+          { new: true }
+        )
+        .populate("user");
 
-    if (!updatedPost) return res.status(404).json({ error: "Post not found" })
+      if (!updatedPost)
+        return res.status(404).json({ error: "Post not found" });
 
-    return res.status(200).json(updatedPost);
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: "Internal server error" });
+      return res.status(200).json(updatedPost);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
   }
-}
 
-async removeLike(req: AuthRequest, res: Response) {
-  try {
-    const postId = req.params.postId;
-    const userId = String(req.query.userId);
+  async removeLike(req: AuthRequest, res: Response) {
+    try {
+      const postId = req.params.postId;
+      const userId = String(req.query.userId);
 
-    if (!userId) return res.status(400).json({ error: "userId is required" })
+      if (!userId) return res.status(400).json({ error: "userId is required" });
 
-    const updatedPost = await this.model.findByIdAndUpdate(
-      postId,
-      { $pull: { likes: userId } },
-      { new: true }
-    );
+      const updatedPost = await this.model
+        .findByIdAndUpdate(postId, { $pull: { likes: userId } }, { new: true })
+        .populate("user");
 
-    if (!updatedPost) return res.status(404).json({ error: "Post not found" })
+      if (!updatedPost)
+        return res.status(404).json({ error: "Post not found" });
 
-    return res.status(200).json(updatedPost);
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: "Internal server error" });
+      return res.status(200).json(updatedPost);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
   }
-}
+
+  async getLikedPostsByUser(req: AuthRequest, res: Response) {
+    try {
+      const userId = req.params.userId;
+      if (!userId) return res.status(400).json({ error: "userId is required" });
+
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.pageSize) || 10;
+      const filter = { likes: userId };
+
+      const likedPosts = await this.model
+        .find(filter)
+        .limit(limit)
+        .skip((page - 1) * limit)
+        .sort({ createdAt: -1 })
+        .populate("user");
+
+      return res.status(200).json(likedPosts);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
 }
 
 export default new PostsController();
