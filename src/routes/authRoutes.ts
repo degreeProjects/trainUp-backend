@@ -7,7 +7,7 @@ const router = express.Router();
  * @swagger
  * tags:
  *   name: Auth
- *   description: The Authentication API
+ *   description: Authentication API
  */
 
 /**
@@ -18,40 +18,32 @@ const router = express.Router();
  *       type: http
  *       scheme: bearer
  *       bearerFormat: JWT
- */
-
-/*
- * @swagger
- * components:
+ *
  *   schemas:
- *     User:
+ *     UserRegister:
  *       type: object
  *       required:
  *         - email
  *         - password
  *         - fullName
- *         - homeCity
  *       properties:
  *         email:
  *           type: string
- *           description: The user email
+ *           example: "user@gmail.com"
  *         password:
  *           type: string
- *           description: The user password
+ *           example: "12345678"
  *         fullName:
  *           type: string
- *           description: The user fullName
- *       example:
- *         email: 'maccabi@gmail.com'
- *         password: '24680'
- *         fullName: 'Ben Idan'
- *         homeCity: 'Tel Aviv'
- */
-
-/**
- * @swagger
- * components:
- *   schemas:
+ *           example: "Lionel Messi"
+ *         homeCity:
+ *           type: string
+ *           example: "Tel Aviv"
+ *         profileImage:
+ *           type: string
+ *           format: binary
+ *           description: Optional profile image
+ *
  *     UserLogin:
  *       type: object
  *       required:
@@ -60,19 +52,21 @@ const router = express.Router();
  *       properties:
  *         email:
  *           type: string
- *           description: The user email
+ *           example: "user@gmail.com"
  *         password:
  *           type: string
- *           description: The user password
- *       example:
- *         email: 'maccabi@gmail.com'
- *         password: '123456'
- */
-
-/**
- * @swagger
- * components:
- *   schemas:
+ *           example: "12345678"
+ *
+ *     GoogleLogin:
+ *       type: object
+ *       required:
+ *         - token
+ *       properties:
+ *         token:
+ *           type: string
+ *           description: Google OAuth Token
+ *           example: "eyJhbGc...123"
+ *
  *     Tokens:
  *       type: object
  *       required:
@@ -81,40 +75,39 @@ const router = express.Router();
  *       properties:
  *         accessToken:
  *           type: string
- *           description: The JWT access token
+ *           example: "eyJhbGc...abc"
  *         refreshToken:
  *           type: string
- *           description: The JWT refresh token
- *       example:
- *         accessToken: '123cd123x1xx1'
- *         refreshToken: '134r2134cr1x3c'
+ *           example: "eyJhbGc...xyz"
  */
 
 /**
  * @swagger
  * /auth/register:
  *   post:
- *     summary: registers a new user
+ *     summary: Register a new user
  *     tags: [Auth]
  *     requestBody:
  *       required: true
  *       content:
  *         multipart/form-data:
  *           schema:
- *             $ref: '#/components/schemas/User'
+ *             $ref: '#/components/schemas/UserRegister'
  *     responses:
  *       201:
- *         description: The new user
+ *         description: Newly created user
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/User'
+ *               $ref: '#/components/schemas/UserRegister'
  *       400:
- *         description: missing email or password
+ *         description: Missing required fields
  *       409:
- *         description: email already exists
+ *         description: Email already exists
+ *       422:
+ *         description: Error while trying to upload file
  *       500:
- *         description: unexpected error
+ *         description: Unexpected error
  */
 router.post("/register", authController.register);
 
@@ -122,25 +115,27 @@ router.post("/register", authController.register);
  * @swagger
  * /auth/login:
  *   post:
- *     summary: login a user
+ *     summary: Login with email & password
  *     tags: [Auth]
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
- *            schema:
- *               $ref: '#/components/schemas/UserLogin'
+ *           schema:
+ *             $ref: '#/components/schemas/UserLogin'
  *     responses:
  *       200:
- *         description: The access & refresh tokens
+ *         description: Access & refresh tokens
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Tokens'
+ *       400:
+ *         description: Missing email or password
  *       401:
- *         description: email or password is incorrect
+ *         description: Incorrect email or password
  *       500:
- *         description: unexpected error
+ *         description: Unexpected error
  */
 router.post("/login", authController.login);
 
@@ -148,18 +143,18 @@ router.post("/login", authController.login);
  * @swagger
  * /auth/logout:
  *   get:
- *     summary: logout a user
+ *     summary: Logout (invalidate refresh token)
  *     tags: [Auth]
- *     description: need to provide the refresh token in the auth header
+ *     description: "Provide refresh token in Authorization header: Bearer <refreshToken>"
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: logout completed successfully
+ *         description: Logout successful
  *       401:
- *         description: Authorization information is missing or invalid
+ *         description: Missing or invalid refresh token
  *       500:
- *         description: unexpected error
+ *         description: Unexpected error
  */
 router.get("/logout", authController.logout);
 
@@ -167,22 +162,22 @@ router.get("/logout", authController.logout);
  * @swagger
  * /auth/refresh:
  *   get:
- *     summary: get a new access token using the refresh token
+ *     summary: Refresh access token using refresh token
  *     tags: [Auth]
- *     description: need to provide the refresh token in the auth header
+ *     description: "Provide refresh token in Authorization header: Bearer <refreshToken>"
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: logout completed successfully
+ *         description: New access & refresh tokens
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Tokens'
  *       401:
- *         description: Authorization information is missing or invalid
+ *         description: Missing or invalid refresh token
  *       500:
- *         description: unexpected error
+ *         description: Unexpected error
  */
 router.get("/refresh", authController.refresh);
 
@@ -190,21 +185,23 @@ router.get("/refresh", authController.refresh);
  * @swagger
  * /auth/google-login:
  *   post:
- *     summary: login a user by google
+ *     summary: Login using Google OAuth
  *     tags: [Auth]
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/GoogleLogin'
  *     responses:
  *       200:
- *         description: The access & refresh tokens
+ *         description: Access & refresh tokens
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Tokens'
- *       401:
- *         description: email or password is incorrect
+ *       500:
+ *         description: Failed to login via Google
  */
 router.post("/google-login", authController.loginByGoogle);
 
