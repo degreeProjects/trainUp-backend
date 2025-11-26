@@ -371,4 +371,74 @@ router.delete(
   postsController.deleteById.bind(postsController)
 );
 
+/**
+ * @swagger
+ * /posts/addLike/{id}:
+ *   put:
+ *     summary: add like to post
+ *     tags: [Posts]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: Numeric ID of the post to add like
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: the post with the new like
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Post'
+ *       400:
+ *         description: userId is required
+ *       404:
+ *          post not found
+ *       500:
+ *          Internal server error
+ */
+router.put(
+  "/addLike/:postId",
+  authMiddleware,
+  postsController.addLike.bind(postsController)
+);
+
+/**
+ * @swagger
+ * /posts/removeLike/{id}:
+ *   put:
+ *     summary: remove like from post
+ *     tags: [Posts]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: Numeric ID of the post to remove like
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: the post without the like
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Post'
+ *       400:
+ *         description: userId is required
+ *       404:
+ *          post not found
+ *       500:
+ *          Internal server error
+ */
+router.put(
+  "/removeLike/:postId",
+  authMiddleware,
+  postsController.removeLike.bind(postsController)
+);
+
 export default router;

@@ -153,6 +153,50 @@ class PostsController extends BaseController<IPost> {
       res.status(409).send("fail: " + err.message);
     }
   }
+
+  async addLike(req: AuthRequest, res: Response) {
+  try {
+    const postId = req.params.postId;
+    const userId = String(req.query.userId);
+
+    if (!userId) return res.status(400).json({ error: "userId is required" })
+
+    const updatedPost = await this.model.findByIdAndUpdate(
+      postId,
+      { $addToSet: { likes: userId } },
+      { new: true }
+    );
+
+    if (!updatedPost) return res.status(404).json({ error: "Post not found" })
+
+    return res.status(200).json(updatedPost);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+async removeLike(req: AuthRequest, res: Response) {
+  try {
+    const postId = req.params.postId;
+    const userId = String(req.query.userId);
+
+    if (!userId) return res.status(400).json({ error: "userId is required" })
+
+    const updatedPost = await this.model.findByIdAndUpdate(
+      postId,
+      { $pull: { likes: userId } },
+      { new: true }
+    );
+
+    if (!updatedPost) return res.status(404).json({ error: "Post not found" })
+
+    return res.status(200).json(updatedPost);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+}
 }
 
 export default new PostsController();
