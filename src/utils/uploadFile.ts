@@ -4,6 +4,8 @@ import multer from "multer";
 
 const uploadFilePath = path.resolve(__dirname, "../..", "public/uploads");
 
+// Configure disk storage so every upload lands under /public/uploads and gets a
+// timestamp-based filename to avoid collisions.
 const storageFile: multer.StorageEngine = multer.diskStorage({
   destination: uploadFilePath,
   filename(
@@ -24,6 +26,8 @@ const uploadFile = multer({
   storage: storageFile,
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter(req, file, callback) {
+    // Lock uploads down to common image formats to prevent users from storing
+    // arbitrary content on the server.
     const extension: boolean =
       [".png", ".jpg", ".jpeg"].indexOf(
         path.extname(file.originalname).toLowerCase()
@@ -47,6 +51,8 @@ const handleSingleUploadFile = async (
   req: Request,
   res: Response
 ): Promise<{ file: Express.Multer.File | undefined; body: unknown }> => {
+  // Wrap Multer's callback signature so controllers can `await` uploads and
+  // share a consistent error-handling path.
   return new Promise((resolve, reject): void => {
     uploadFile(req, res, (error) => {
       if (error) {

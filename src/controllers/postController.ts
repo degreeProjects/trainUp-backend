@@ -68,6 +68,8 @@ class PostsController extends BaseController<IPost> {
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.pageSize) || 10;
 
+    // Build a dynamic Mongo filter; omit query params set to "all" so the same
+    // endpoint can serve both filtered and unfiltered feeds.
     const filter: any = {};
     if (city && city !== "all") filter.city = city;
     if (type && type !== "all") filter.type = type;
@@ -121,6 +123,8 @@ class PostsController extends BaseController<IPost> {
       const post = await this.model.findById(postId);
       if (!post) return res.status(404).send("post not found");
 
+      // Append the new comment while preserving existing entries so Mongoose
+      // change tracking picks up the array mutation.
       post.comments = [...post.comments, { ...req.body, user }];
 
       await post.save();
@@ -187,6 +191,8 @@ class PostsController extends BaseController<IPost> {
       const limit = Number(req.query.pageSize) || 10;
       const filter = { likes: userId };
 
+      // Reuse the pagination pattern from other endpoints so the client can
+      // scroll through liked posts without overfetching.
       const likedPosts = await this.model
         .find(filter)
         .limit(limit)

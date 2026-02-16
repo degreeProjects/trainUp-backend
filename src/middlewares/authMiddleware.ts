@@ -12,12 +12,16 @@ const authMiddleware = (
   next: NextFunction
 ) => {
   const authHeader = req.headers["authorization"];
+  // Clients send access tokens as `Authorization: Bearer <jwt>`; grab the token
+  // portion only because `jwt.verify` expects the raw credential.
   const token = authHeader && authHeader.split(" ")[1]; // Bearer <token>
   if (!token) {
     logger.error("user didn't add access token to the request");
     return res.sendStatus(401);
   }
 
+  // `jwt.verify` both validates the signature and decodes the payload, letting
+  // downstream handlers trust `req.user`.
   jwt.verify(token, config.jwtSecret, (err, user) => {
     if (err) {
       logger.error("something is wrong with the provided access token");
