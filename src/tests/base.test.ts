@@ -17,6 +17,7 @@ const user: IUser = {
 };
 const testImage = path.resolve(__dirname, "./testImage.png");
 let accessToken = "";
+let createdPostIds: string[] = [];
 
 const originalConsoleError = console.error;
 beforeAll(async () => {
@@ -25,7 +26,6 @@ beforeAll(async () => {
     // Suppress logger output during expected error tests
     jest.spyOn(loggerModule.logger, "error").mockImplementation(() => true as any);
     await User.deleteMany({ email: user.email });
-    await Post.deleteMany();
 
     const registerResponse = await request(app)
         .post("/auth/register")
@@ -44,7 +44,10 @@ beforeAll(async () => {
 afterAll(async () => {
     console.error = originalConsoleError;
     jest.restoreAllMocks();
-    await Post.deleteMany();
+    // Only delete posts created during this test run
+    if (createdPostIds.length > 0) {
+        await Post.deleteMany({ _id: { $in: createdPostIds } });
+    }
     await User.deleteMany({ email: user.email });
     await mongoose.connection.close();
 });
@@ -105,6 +108,7 @@ describe("BaseController.post tests", () => {
             .attach("picture", testImage);
 
         postId = response.body._id;
+        createdPostIds.push(postId);
         expect(response.statusCode).toBe(201);
     });
 

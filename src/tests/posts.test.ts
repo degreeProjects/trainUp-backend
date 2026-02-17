@@ -16,13 +16,13 @@ const user: IUser = {
 const testImage = path.resolve(__dirname, "./testImage.png");
 
 let accessToken = "";
+const createdPostIds: string[] = [];
 
 // Suppress console.error during tests to reduce noise from expected errors
 const originalConsoleError = console.error;
 beforeAll(async () => {
   console.error = jest.fn();
   app = await initApp();
-  await Post.deleteMany();
 
   await User.deleteMany({ email: user.email });
   const response = await request(app)
@@ -40,6 +40,11 @@ beforeAll(async () => {
 
 afterAll(async () => {
   console.error = originalConsoleError;
+  // Only delete posts created during this test run
+  if (createdPostIds.length > 0) {
+    await Post.deleteMany({ _id: { $in: createdPostIds } });
+  }
+  await User.deleteMany({ email: user.email });
   await mongoose.connection.close();
 });
 
@@ -64,6 +69,7 @@ describe("post tests", () => {
       .attach("picture", testImage);
 
     post._id = response.body._id;
+    createdPostIds.push(response.body._id);
 
     expect(response.statusCode).toBe(201);
     expect(response.body.user).toBe(user._id);
@@ -83,6 +89,8 @@ describe("post tests", () => {
       .field("city", post.city!!)
       .field("user", post.user!!);
 
+    createdPostIds.push(response.body._id);
+
     expect(response.statusCode).toBe(201);
     expect(response.body.user).toBe(user._id);
     expect(response.body.type).toBe(post.type);
@@ -96,7 +104,7 @@ describe("post tests", () => {
     const response = await request(app).get("/posts");
 
     expect(response.statusCode).toBe(200);
-    expect(response.body).toHaveLength(2);
+    expect(response.body.length).toBeGreaterThanOrEqual(2);
   });
 
   test("Test GET post by id", async () => {
@@ -117,7 +125,7 @@ describe("post tests", () => {
     );
 
     expect(response.statusCode).toBe(200);
-    expect(response.body).toHaveLength(2);
+    expect(response.body.length).toBeGreaterThanOrEqual(2);
   });
 
   test("TEST GET posts of me", async () => {
@@ -126,7 +134,7 @@ describe("post tests", () => {
       .set("Authorization", "Bearer " + accessToken);
 
     expect(response.statusCode).toBe(200);
-    expect(response.body).toHaveLength(2);
+    expect(response.body.length).toBeGreaterThanOrEqual(2);
   });
 
   test("TEST GET training types", async () => {
@@ -350,6 +358,7 @@ describe("Post Database Error tests", () => {
       .attach("picture", testImage);
 
     const postId = createResponse.body._id;
+    createdPostIds.push(postId);
 
     await mongoose.connection.close();
 
@@ -361,9 +370,6 @@ describe("Post Database Error tests", () => {
     expect(response.statusCode).toBe(409);
 
     await mongoose.connect(require("../env.config").default.dbUrl);
-
-    // Cleanup
-    await Post.deleteOne({ _id: postId });
   });
 
   test("Test addLike with database error", async () => {
@@ -377,6 +383,7 @@ describe("Post Database Error tests", () => {
       .attach("picture", testImage);
 
     const postId = createResponse.body._id;
+    createdPostIds.push(postId);
 
     await mongoose.connection.close();
 
@@ -388,9 +395,6 @@ describe("Post Database Error tests", () => {
     expect(response.body.error).toBe("Internal server error");
 
     await mongoose.connect(require("../env.config").default.dbUrl);
-
-    // Cleanup
-    await Post.deleteOne({ _id: postId });
   });
 
   test("Test removeLike with database error", async () => {
@@ -404,6 +408,7 @@ describe("Post Database Error tests", () => {
       .attach("picture", testImage);
 
     const postId = createResponse.body._id;
+    createdPostIds.push(postId);
 
     await mongoose.connection.close();
 
@@ -415,9 +420,6 @@ describe("Post Database Error tests", () => {
     expect(response.body.error).toBe("Internal server error");
 
     await mongoose.connect(require("../env.config").default.dbUrl);
-
-    // Cleanup
-    await Post.deleteOne({ _id: postId });
   });
 
   test("Test getLikedPostsByUser with database error", async () => {
