@@ -17,12 +17,11 @@ const testImage = path.resolve(__dirname, "./testImage.png");
 
 beforeAll(async () => {
   app = await initApp();
-  await User.deleteMany();
-
-  User.deleteMany({ email: user.email });
+  await User.deleteMany({ email: user.email });
 });
 
 afterAll(async () => {
+  await User.deleteMany({ email: user.email });
   await mongoose.connection.close();
 });
 

@@ -15,6 +15,8 @@ const register = async (req: Request, res: Response) => {
     | undefined;
 
   try {
+    // Run the shared upload pipeline so the controller always receives the parsed
+    // multipart body and (optional) profile image metadata in one place.
     uploadResult = await handleSingleUploadFile(req, res);
   } catch (error: any) {
     logger.error("error while trying to upload file");
@@ -84,6 +86,8 @@ const login = async (req: Request, res: Response) => {
 
     const accessToken = jwt.sign({ _id: user._id }, config.jwtSecret, options);
     const refreshToken = jwt.sign({ _id: user._id }, config.jwtRefreshSecret);
+    // Persist each refresh token so we can later revoke individual sessions
+    // (e.g. logout from a single device) instead of wiping all tokens at once.
     if (!user.refreshTokens) {
       user.refreshTokens = [refreshToken];
     } else {
@@ -129,6 +133,7 @@ const loginByGoogle = async (req: Request, res: Response) => {
 
     const refreshToken = jwt.sign({ _id: user._id }, config.jwtRefreshSecret);
 
+    // Same refresh-token fan-out as email login to support multiple devices.
     if (!user.refreshTokens) {
       user.refreshTokens = [refreshToken];
     } else {
@@ -154,6 +159,8 @@ const logout = async (req: Request, res: Response) => {
     return res.sendStatus(401);
   }
 
+  // The refresh token lives in the Authorization header so mobile/SPA clients
+  // can treat it like any other Bearer credential.
   jwt.verify(refreshToken, config.jwtRefreshSecret, async (err, decoded) => {
     if (err) {
       logger.error("something is wrong with the provided refresh token");
@@ -184,7 +191,7 @@ const logout = async (req: Request, res: Response) => {
       }
     } catch (err) {
       logger.error("error while trying to logout");
-      res.sendStatus(500).send("error while trying to logout");
+      return res.status(500).send("error while trying to logout");
     }
   });
 };
@@ -197,6 +204,8 @@ const refresh = async (req: Request, res: Response) => {
     return res.sendStatus(401);
   }
 
+  // Refresh tokens are rotated: once a token is exchanged it gets replaced to
+  // reduce the blast radius of a leaked long-lived credential.
   jwt.verify(refreshToken, config.jwtRefreshSecret, async (err, decoded) => {
     if (err) {
       logger.error("something is wrong with the provided refresh token");
@@ -229,6 +238,8 @@ const refresh = async (req: Request, res: Response) => {
         { _id: userId },
         config.jwtRefreshSecret
       );
+      // Remove the token being used so it cannot be replayed, then add the
+      // brand new refresh token for this session.
       userDb.refreshTokens = userDb.refreshTokens.filter(
         (token) => token !== refreshToken
       );
@@ -240,7 +251,7 @@ const refresh = async (req: Request, res: Response) => {
       });
     } catch (err) {
       logger.error("error while trying to refresh");
-      res.sendStatus(500).send("error while trying to refresh");
+      return res.status(500).send("error while trying to refresh");
     }
   });
 };

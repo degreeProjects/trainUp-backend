@@ -12,11 +12,15 @@ const bootstrapServer = async () => {
   const port = config.port ?? 3000;
 
   if (config.nodeEnv !== "production") {
+    // In dev we keep things simple: plain HTTP server, single port, easier
+    // logging/stacktraces.
     logger.info("development mode");
     http.createServer(app).listen(port, () => {
       logger.info(`server listening on port ${port}`);
     });
   } else {
+    // Production expects TLS termination here, so bootstrap HTTPS using the
+    // bundled cert/key pair.
     logger.info("production mode");
     const options = {
       key: fs.readFileSync(path.join(__dirname, "../cert/client-key.pem")),
