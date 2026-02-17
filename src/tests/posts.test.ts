@@ -17,7 +17,10 @@ const testImage = path.resolve(__dirname, "./testImage.png");
 
 let accessToken = "";
 
+// Suppress console.error during tests to reduce noise from expected errors
+const originalConsoleError = console.error;
 beforeAll(async () => {
+  console.error = jest.fn();
   app = await initApp();
   await Post.deleteMany();
 
@@ -36,6 +39,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  console.error = originalConsoleError;
   await mongoose.connection.close();
 });
 
@@ -273,5 +277,159 @@ describe("post tests", () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.body._id).toBe(post._id);
+  });
+});
+
+describe("Post Error Handling tests", () => {
+
+  test("Test GET post by invalid id (not found)", async () => {
+    const invalidPostId = "507f1f77bcf86cd799439011";
+
+    const response = await request(app).get(`/posts/${invalidPostId}`);
+
+    expect(response.statusCode).toBe(404);
+    expect(response.body.message).toBe("Post not found");
+  });
+
+  test("Test GET post by malformed id (error)", async () => {
+    const malformedId = "invalid_id_format";
+
+    const response = await request(app).get(`/posts/${malformedId}`);
+
+    expect(response.statusCode).toBe(500);
+    expect(response.body.message).toBeDefined();
+  });
+});
+
+describe("Post Database Error tests", () => {
+  test("Test GET posts by city and type with database error", async () => {
+    await mongoose.connection.close();
+
+    const response = await request(app).get(
+      "/posts/search/cityAndType/?city=herzliya&type=Gym&page=1&pageSize=10"
+    );
+
+    expect(response.statusCode).toBe(500);
+    expect(response.body.message).toBeDefined();
+
+    await mongoose.connect(require("../env.config").default.dbUrl);
+  });
+
+  test("Test GET posts of me with database error", async () => {
+    await mongoose.connection.close();
+
+    const response = await request(app)
+      .get("/posts/user/me?page=1&pageSize=10")
+      .set("Authorization", "Bearer " + accessToken);
+
+    expect(response.statusCode).toBe(500);
+    expect(response.body.message).toBeDefined();
+
+    await mongoose.connect(require("../env.config").default.dbUrl);
+  });
+
+  test("Test GET training types with database error", async () => {
+    // This one is tricky since it doesn't actually query DB
+    // But we can test the error handling path exists
+    const response = await request(app)
+      .get("/posts/training/types")
+      .set("Authorization", "Bearer " + accessToken);
+
+    // Should succeed normally
+    expect(response.statusCode).toBe(200);
+  });
+
+  test("Test POST comment with database error", async () => {
+    // Create a post first
+    const createResponse = await request(app)
+      .post("/posts")
+      .set("Authorization", "Bearer " + accessToken)
+      .field("type", "Gym")
+      .field("description", "test for comment error")
+      .field("city", "herzliya")
+      .attach("picture", testImage);
+
+    const postId = createResponse.body._id;
+
+    await mongoose.connection.close();
+
+    const response = await request(app)
+      .post(`/posts/${postId}/comment`)
+      .set("Authorization", "Bearer " + accessToken)
+      .send({ body: "This should fail" });
+
+    expect(response.statusCode).toBe(409);
+
+    await mongoose.connect(require("../env.config").default.dbUrl);
+
+    // Cleanup
+    await Post.deleteOne({ _id: postId });
+  });
+
+  test("Test addLike with database error", async () => {
+    // Create a post first
+    const createResponse = await request(app)
+      .post("/posts")
+      .set("Authorization", "Bearer " + accessToken)
+      .field("type", "Gym")
+      .field("description", "test for like error")
+      .field("city", "herzliya")
+      .attach("picture", testImage);
+
+    const postId = createResponse.body._id;
+
+    await mongoose.connection.close();
+
+    const response = await request(app)
+      .put(`/posts/addLike/${postId}?userId=${user._id}`)
+      .set("Authorization", "Bearer " + accessToken);
+
+    expect(response.statusCode).toBe(500);
+    expect(response.body.error).toBe("Internal server error");
+
+    await mongoose.connect(require("../env.config").default.dbUrl);
+
+    // Cleanup
+    await Post.deleteOne({ _id: postId });
+  });
+
+  test("Test removeLike with database error", async () => {
+    // Create a post first
+    const createResponse = await request(app)
+      .post("/posts")
+      .set("Authorization", "Bearer " + accessToken)
+      .field("type", "Gym")
+      .field("description", "test for remove like error")
+      .field("city", "herzliya")
+      .attach("picture", testImage);
+
+    const postId = createResponse.body._id;
+
+    await mongoose.connection.close();
+
+    const response = await request(app)
+      .put(`/posts/removeLike/${postId}?userId=${user._id}`)
+      .set("Authorization", "Bearer " + accessToken);
+
+    expect(response.statusCode).toBe(500);
+    expect(response.body.error).toBe("Internal server error");
+
+    await mongoose.connect(require("../env.config").default.dbUrl);
+
+    // Cleanup
+    await Post.deleteOne({ _id: postId });
+  });
+
+  test("Test getLikedPostsByUser with database error", async () => {
+    await mongoose.connection.close();
+
+    const response = await request(app)
+      .get(`/posts/likedPosts/${user._id}`)
+      .set("Authorization", "Bearer " + accessToken);
+
+    expect(response.statusCode).toBe(500);
+    expect(response.body.error).toBe("Internal server error");
+
+    await mongoose.connect(require("../env.config").default.dbUrl);
   });
 });

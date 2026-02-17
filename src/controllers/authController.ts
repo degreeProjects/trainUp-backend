@@ -191,7 +191,7 @@ const logout = async (req: Request, res: Response) => {
       }
     } catch (err) {
       logger.error("error while trying to logout");
-      res.sendStatus(500).send("error while trying to logout");
+      return res.status(500).send("error while trying to logout");
     }
   });
 };
@@ -251,7 +251,7 @@ const refresh = async (req: Request, res: Response) => {
       });
     } catch (err) {
       logger.error("error while trying to refresh");
-      res.sendStatus(500).send("error while trying to refresh");
+      return res.status(500).send("error while trying to refresh");
     }
   });
 };
