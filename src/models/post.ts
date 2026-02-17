@@ -18,7 +18,7 @@ export const TrainingTypes = [
   "Tennis",
   "Padel",
   "Climbing",
-  "Ruining",
+  "Running",
   "Walking",
   "Cycling",
   "Swimming",
