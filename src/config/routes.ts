@@ -4,7 +4,7 @@ import postsRoute from "../routes/postRoutes";
 import authRoute from "../routes/authRoutes";
 
 export const configRoutes = (app: Express) => {
-  app.use("/users", usersRoute);
-  app.use("/posts", postsRoute);
-  app.use("/auth", authRoute);
+  app.use("/api/users", usersRoute);
+  app.use("/api/posts", postsRoute);
+  app.use("/api/auth", authRoute);
 };
