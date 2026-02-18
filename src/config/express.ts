@@ -13,5 +13,5 @@ export const configExpress = (app: Express) => {
   configRoutes(app);
   configSwagger(app);
 
-  app.use(expressStatic(path.join(__dirname, "../../public")));
+  app.use("/api", expressStatic(path.join(__dirname, "../../public")));
 };
