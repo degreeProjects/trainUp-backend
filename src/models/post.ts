@@ -34,8 +34,11 @@ export interface IPost {
   _id?: string;
   type: TrainingType;
   trainingLength: number;
-  description: string;
-  image: string;
+  description?: string;
+  notes?: string;
+  caloriesSummary?: string;
+  aiTips?: string;
+  image?: string;
   city: string;
   user: string;
   comments: Array<IComment>;
@@ -56,6 +59,22 @@ const postSchema = new mongoose.Schema<IPost>(
     description: {
       type: String,
       required: false,
+      default: "",
+    },
+    notes: {
+      type: String,
+      required: false,
+      default: "",
+    },
+    caloriesSummary: {
+      type: String,
+      required: false,
+      default: "",
+    },
+    aiTips: {
+      type: String,
+      required: false,
+      default: "",
     },
     image: {
       type: String,

@@ -1,10 +1,17 @@
 import { GoogleGenAI } from "@google/genai";
 import config from "../env.config";
 import Post from "../models/post";
+import { logger } from "../config/logger";
 
 const ai = new GoogleGenAI({
     apiKey: config.geminiApiKey,
 });
+
+const isAiDisabled = config.nodeEnv === "test";
+const CALORIES_FALLBACK =
+    "Calories insight is unavailable right now. Try again in a bit.";
+const TIPS_FALLBACK =
+    "AI tips are unavailable right now. Try editing once more in a few minutes.";
 
 interface TrainingHistoryStats {
     totalSessions: number;       // Number of posts logged in the last 30 days
@@ -62,8 +69,13 @@ export async function calculateCaloriesBurn(
     trainingLength: number,
     height: number,
     weight: number,
-    age: number
+    age: number,
+    notes: string = ""
 ) {
+    if (isAiDisabled) {
+        return CALORIES_FALLBACK;
+    }
+
     const history = await getUserTrainingHistory(userId);
 
     // Build a training-history section so Gemini can adjust for fitness level.
@@ -90,16 +102,69 @@ export async function calculateCaloriesBurn(
     }
 
     // Compose the full prompt: static profile + dynamic history context.
+    const notesContext = notes?.trim()
+        ? `Athlete notes: ${notes.trim()}`
+        : "Athlete notes: none provided.";
+
     const contents = `User Profile: ${height}cm, ${weight}kg, ${age} years old.
     Activity: ${trainingType} for ${trainingLength} minutes.
+    ${notesContext}
     ${historyContext}
     Task: Based on the profile AND training history, provide ONLY the estimated calorie burn range (e.g. 300-400). No prose.`;
     
 
-    const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents,
-    });
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents,
+        });
 
-    return `You burn: ${response.text} in this training`;
+        return `You burn: ${response.text} in this training`;
+    } catch (err) {
+        logger.error("Failed to generate calories insight", err);
+        return CALORIES_FALLBACK;
+    }
 }
+
+interface GenerateTipsInput {
+    trainingType: string;
+    trainingLength: number;
+    height: number;
+    weight: number;
+    age: number;
+    notes: string;
+}
+
+export async function generateWorkoutTips({
+    trainingType,
+    trainingLength,
+    height,
+    weight,
+    age,
+    notes,
+}: GenerateTipsInput) {
+    if (!notes?.trim()) return "";
+    if (isAiDisabled) {
+        return TIPS_FALLBACK;
+    }
+
+    const prompt = `You are an AI personal trainer crafting SHORT, highly actionable adjustments.
+    Athlete: ${height}cm, ${weight}kg, ${age} years old.
+    Session: ${trainingType} for ${trainingLength} minutes.
+    Notes: ${notes.trim()}
+    Respond with at most 2 concise sentences. Focus on improving form, intensity, rest, or progression. Skip platitudes.`;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+        });
+
+        return response.text?.trim() ?? "";
+    } catch (err) {
+        logger.error("Failed to generate AI workout tips", err);
+        return "";
+    }
+}
+
+export { CALORIES_FALLBACK, TIPS_FALLBACK };
