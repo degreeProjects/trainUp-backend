@@ -1,3 +1,10 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+
 node_modules
 dist
 .vscode
+public
+coverage

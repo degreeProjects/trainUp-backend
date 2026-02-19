@@ -3,10 +3,11 @@ import { configExpress } from "./config/express";
 import { configMongo } from "./config/mongo";
 import dotenv from "dotenv";
 import { initLogger, logger } from "./config/logger";
+import config from "./env.config";
 
 export const initApp = async (): Promise<Express> => {
   try {
-    if (process.env.NODE_ENV === "test") {
+    if (config.nodeEnv === "test") {
       dotenv.config({ path: "./.envtest" });
     } else {
       dotenv.config();
@@ -14,7 +15,7 @@ export const initApp = async (): Promise<Express> => {
 
     initLogger();
 
-    await configMongo(process.env.DB_URL || "mongodb://localhost/trainUp-dev");
+    await configMongo(config.dbUrl);
     const app = express();
     configExpress(app);
 
