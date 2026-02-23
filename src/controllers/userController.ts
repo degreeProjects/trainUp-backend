@@ -11,11 +11,13 @@ class UsersController extends BaseController<IUser> {
   }
 
   async getMe(req: AuthRequest, res: Response) {
+    // Use the authenticated user id to fetch "my profile".
     req.params.id = req.user?._id || "";
     await super.getById(req, res);
   }
 
   async putById(req: AuthRequest, res: Response) {
+    // Update the authenticated user. Supports an optional profile image upload.
     let uploadResult: { file?: Express.Multer.File; body: unknown };
 
     try {
@@ -26,8 +28,12 @@ class UsersController extends BaseController<IUser> {
       return;
     }
 
+    // Force updates to target the authenticated user only.
     req.params.id = req.user?._id || "";
+
+    // If an image was uploaded, store the filename in profileImage.
     req.body.profileImage = uploadResult.file?.filename;
+
     await super.putById(req, res);
   }
 }
