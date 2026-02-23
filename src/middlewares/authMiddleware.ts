@@ -6,25 +6,22 @@ import config from "../env.config";
 export interface AuthRequest extends Request {
   user?: { _id: string };
 }
-const authMiddleware = (
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-) => {
+
+const authMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
   const authHeader = req.headers["authorization"];
-  // Clients send access tokens as `Authorization: Bearer <jwt>`; grab the token
-  // portion only because `jwt.verify` expects the raw credential.
-  const token = authHeader && authHeader.split(" ")[1]; // Bearer <token>
+
+  // Expect: Authorization: Bearer <token>. Extract the token for verification.
+  const token = authHeader && authHeader.split(" ")[1];
+
   if (!token) {
-    logger.error("user didn't add access token to the request");
+    logger.error("missing access token");
     return res.sendStatus(401);
   }
 
-  // `jwt.verify` both validates the signature and decodes the payload, letting
-  // downstream handlers trust `req.user`.
+  // Verify token and attach the decoded payload to req.user for downstream handlers.
   jwt.verify(token, config.jwtSecret, (err, user) => {
     if (err) {
-      logger.error("something is wrong with the provided access token");
+      logger.error("invalid or expired access token");
       return res.sendStatus(401);
     }
 
