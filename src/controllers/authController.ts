@@ -15,8 +15,7 @@ const register = async (req: Request, res: Response) => {
     | undefined;
 
   try {
-    // Run the shared upload pipeline so the controller always receives the parsed
-    // multipart body and (optional) profile image metadata in one place.
+    // Parse multipart form (and optional profile image) using the shared upload helper.
     uploadResult = await handleSingleUploadFile(req, res);
   } catch (error: any) {
     logger.error("error while trying to upload file");
@@ -24,6 +23,8 @@ const register = async (req: Request, res: Response) => {
   }
 
   const { email, password, fullName, homeCity } = req.body;
+
+  // Validate required fields before hitting the database.
   if (!email || !password || !fullName) {
     logger.error("missing one of the following: email, password, fullName");
 
@@ -41,8 +42,10 @@ const register = async (req: Request, res: Response) => {
       return res.status(409).send("email already exists");
     }
 
+    // Hash password before saving the user.
     const salt = await bcrypt.genSalt(10);
     const encryptedPassword = await bcrypt.hash(password, salt);
+
     const user = await User.create({
       email: email,
       password: encryptedPassword,
@@ -62,6 +65,7 @@ const register = async (req: Request, res: Response) => {
 const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
+  // Basic input check.
   if (!email || !password) {
     logger.error("missing email or password");
     return res.status(400).send("missing email or password");
@@ -74,6 +78,7 @@ const login = async (req: Request, res: Response) => {
       return res.status(401).send("email is incorrect");
     }
 
+    // Verify password hash.
     const match = await bcrypt.compare(password, user.password);
     if (!match) {
       logger.error("password is incorrect");
@@ -84,10 +89,11 @@ const login = async (req: Request, res: Response) => {
       expiresIn: config.jwtExpiration,
     } as jwt.SignOptions;
 
+    // Issue a short-lived access token + a long-lived refresh token.
     const accessToken = jwt.sign({ _id: user._id }, config.jwtSecret, options);
     const refreshToken = jwt.sign({ _id: user._id }, config.jwtRefreshSecret);
-    // Persist each refresh token so we can later revoke individual sessions
-    // (e.g. logout from a single device) instead of wiping all tokens at once.
+
+    // Store refresh tokens so individual sessions can be revoked later.
     if (!user.refreshTokens) {
       user.refreshTokens = [refreshToken];
     } else {
@@ -109,6 +115,7 @@ const loginByGoogle = async (req: Request, res: Response) => {
   const { token } = req.body;
 
   try {
+    // Validate Google ID token and extract the user's profile info.
     const ticket = await client.verifyIdToken({
       idToken: token,
       audience: config.googleClientId,
@@ -116,8 +123,8 @@ const loginByGoogle = async (req: Request, res: Response) => {
 
     const payload = ticket.getPayload();
 
+    // Find existing user (by email) or create a new one from Google profile.
     let user = await User.findOne({ email: payload?.email });
-
     if (!user) {
       user = await User.create({
         email: payload?.email,
@@ -129,11 +136,11 @@ const loginByGoogle = async (req: Request, res: Response) => {
       expiresIn: config.jwtExpiration,
     } as jwt.SignOptions;
 
+    // Issue tokens for the app session.
     const accessToken = jwt.sign({ _id: user._id }, config.jwtSecret, options);
-
     const refreshToken = jwt.sign({ _id: user._id }, config.jwtRefreshSecret);
 
-    // Same refresh-token fan-out as email login to support multiple devices.
+    // Store refresh tokens so multiple devices/sessions are supported.
     if (!user.refreshTokens) {
       user.refreshTokens = [refreshToken];
     } else {
@@ -154,13 +161,14 @@ const loginByGoogle = async (req: Request, res: Response) => {
 const logout = async (req: Request, res: Response) => {
   const authHeader = req.headers["authorization"];
   const refreshToken = authHeader && authHeader.split(" ")[1]; // Bearer <token>
+
+  // Logout requires a refresh token to revoke that specific session.
   if (!refreshToken) {
     logger.error("user didn't add refresh token to the request");
     return res.sendStatus(401);
   }
 
-  // The refresh token lives in the Authorization header so mobile/SPA clients
-  // can treat it like any other Bearer credential.
+  // Verify refresh token, then remove it from the user's stored token list.
   jwt.verify(refreshToken, config.jwtRefreshSecret, async (err, decoded) => {
     if (err) {
       logger.error("something is wrong with the provided refresh token");
@@ -168,13 +176,13 @@ const logout = async (req: Request, res: Response) => {
     }
 
     const userId = (decoded as { _id: string })?._id;
-
     if (!userId) return res.sendStatus(401);
 
     try {
       const userDb = await User.findOne({ _id: userId });
       if (!userDb) return res.sendStatus(401);
 
+      // If the token isn't found, clear tokens as a safety measure and deny.
       if (
         !userDb?.refreshTokens ||
         !userDb.refreshTokens.includes(refreshToken)
@@ -182,13 +190,15 @@ const logout = async (req: Request, res: Response) => {
         userDb.refreshTokens = [];
         await userDb.save();
         return res.sendStatus(401);
-      } else {
-        userDb.refreshTokens = userDb.refreshTokens.filter(
-          (token) => token !== refreshToken
-        );
-        await userDb.save();
-        return res.sendStatus(200);
       }
+
+      // Remove just this refresh token (logout from this device/session).
+      userDb.refreshTokens = userDb.refreshTokens.filter(
+        (token) => token !== refreshToken
+      );
+
+      await userDb.save();
+      return res.sendStatus(200);
     } catch (err) {
       logger.error("error while trying to logout");
       return res.status(500).send("error while trying to logout");
@@ -199,13 +209,14 @@ const logout = async (req: Request, res: Response) => {
 const refresh = async (req: Request, res: Response) => {
   const authHeader = req.headers["authorization"];
   const refreshToken = authHeader && authHeader.split(" ")[1]; // Bearer <token>
+
+  // Refresh requires the current refresh token.
   if (!refreshToken) {
     logger.error("user didn't add refresh token to the request");
     return res.sendStatus(401);
   }
 
-  // Refresh tokens are rotated: once a token is exchanged it gets replaced to
-  // reduce the blast radius of a leaked long-lived credential.
+  // Rotate refresh tokens: exchange the current token for a new one and invalidate the old.
   jwt.verify(refreshToken, config.jwtRefreshSecret, async (err, decoded) => {
     if (err) {
       logger.error("something is wrong with the provided refresh token");
@@ -217,9 +228,9 @@ const refresh = async (req: Request, res: Response) => {
 
     try {
       const userDb = await User.findOne({ _id: userId });
-
       if (!userDb) return res.sendStatus(401);
 
+      // Deny refresh if the token isn't one of the stored active sessions.
       if (
         !userDb.refreshTokens ||
         !userDb.refreshTokens.includes(refreshToken)
@@ -233,17 +244,19 @@ const refresh = async (req: Request, res: Response) => {
         expiresIn: config.jwtExpiration,
       } as jwt.SignOptions;
 
+      // Issue new tokens.
       const accessToken = jwt.sign({ _id: userId }, config.jwtSecret, options);
       const newRefreshToken = jwt.sign(
         { _id: userId },
         config.jwtRefreshSecret
       );
-      // Remove the token being used so it cannot be replayed, then add the
-      // brand new refresh token for this session.
+
+      // Replace the used refresh token with the new one.
       userDb.refreshTokens = userDb.refreshTokens.filter(
         (token) => token !== refreshToken
       );
       userDb.refreshTokens.push(newRefreshToken);
+
       await userDb.save();
       return res.status(200).send({
         accessToken: accessToken,
