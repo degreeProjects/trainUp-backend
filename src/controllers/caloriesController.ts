@@ -9,9 +9,9 @@ class CaloriesController {
     async calculateCalories(req: AuthRequest, res: Response) {
         try {
             const { type, trainingLength, height, weight, age } = req.body;
-            const geminiRes = await calculateCaloriesBurn(type, trainingLength, height, weight, age)
+            const geminiRes = await calculateCaloriesBurn(req.user._id, type, trainingLength, height, weight, age);
 
-            res.send(geminiRes)
+            res.send(geminiRes);
         } catch (err) {
             logger.error("error while trying to calculate calories");
             res.status(500).json({ message: err.message });
