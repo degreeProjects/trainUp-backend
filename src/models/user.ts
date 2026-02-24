@@ -7,6 +7,9 @@ export interface IUser {
   fullName: string;
   homeCity?: string;
   profileImage?: string;
+  height: number;
+  weight: number;
+  age: number;
   refreshTokens?: Array<string>;
 }
 
@@ -28,6 +31,18 @@ const userSchema = new mongoose.Schema<IUser>({
   profileImage: {
     type: String,
     required: false,
+  },
+  height: {
+    type: Number,
+    default: 170,
+  },
+  weight: {
+    type: Number,
+    default: 70,
+  },
+  age: {
+    type: Number,
+    default: 25,
   },
   refreshTokens: {
     type: [String],

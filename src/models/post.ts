@@ -33,6 +33,7 @@ export type TrainingType = (typeof TrainingTypes)[number];
 export interface IPost {
   _id?: string;
   type: TrainingType;
+  trainingLength: number;
   description: string;
   image: string;
   city: string;
@@ -47,6 +48,10 @@ const postSchema = new mongoose.Schema<IPost>(
       type: String,
       required: true,
       enum: TrainingTypes,
+    },
+    trainingLength: {
+      type: Number,
+      required: true,
     },
     description: {
       type: String,
