@@ -27,6 +27,7 @@
   },
   "homepage": "https://github.com/benbenSapir/trainUp-backend#readme",
   "dependencies": {
+    "@google/genai": "^1.42.0",
     "bcrypt": "^5.1.1",
     "bunyan": "^1.8.15",
     "bunyan-format": "^0.2.1",

@@ -10,6 +10,7 @@ const config = {
   jwtRefreshSecret: env.get("JWT_REFRESH_SECRET").required().asString(),
   nodeEnv: env.get("NODE_ENV").required().asString(),
   googleClientId: env.get("GOOGLE_CLIENT_ID").required().asString(),
+  geminiApiKey: env.get("GEMINI_API_KEY").required().asString(),
 };
 
 export default config;

@@ -6,3 +6,4 @@ JWT_REFRESH_SECRET = fbb866cf21c7d5b59f4598a9157171af6f9769806d4e0590ade0da2d5ee
 JWT_EXPIRATION = 20s
 NODE_ENV = test
 LOG_LEVEL=info
+GEMINI_API_KEY = get-google-api-key-from-google-ai-studio
