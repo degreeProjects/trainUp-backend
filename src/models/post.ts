@@ -33,8 +33,12 @@ export type TrainingType = (typeof TrainingTypes)[number];
 export interface IPost {
   _id?: string;
   type: TrainingType;
-  description: string;
-  image: string;
+  trainingLength: number;
+  description?: string;
+  notes?: string;
+  caloriesSummary?: string;
+  aiTips?: string;
+  image?: string;
   city: string;
   user: string;
   comments: Array<IComment>;
@@ -48,9 +52,29 @@ const postSchema = new mongoose.Schema<IPost>(
       required: true,
       enum: TrainingTypes,
     },
+    trainingLength: {
+      type: Number,
+      required: true,
+    },
     description: {
       type: String,
       required: false,
+      default: "",
+    },
+    notes: {
+      type: String,
+      required: false,
+      default: "",
+    },
+    caloriesSummary: {
+      type: String,
+      required: false,
+      default: "",
+    },
+    aiTips: {
+      type: String,
+      required: false,
+      default: "",
     },
     image: {
       type: String,

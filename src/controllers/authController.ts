@@ -22,7 +22,7 @@ const register = async (req: Request, res: Response) => {
     return res.status(422).json({ errors: [error.message] });
   }
 
-  const { email, password, fullName, homeCity } = req.body;
+  const { email, password, fullName, homeCity, height, weight, age } = req.body;
 
   // Validate required fields before hitting the database.
   if (!email || !password || !fullName) {
@@ -52,6 +52,9 @@ const register = async (req: Request, res: Response) => {
       fullName: fullName,
       homeCity: homeCity,
       profileImage: uploadResult.file?.filename,
+      height: Number(height),
+      weight: Number(weight),
+      age: Number(age),
     });
 
     // Auto sign-in: issue tokens so the client can skip a separate login call.

@@ -103,7 +103,8 @@ describe("BaseController.post tests", () => {
             .post("/posts")
             .set("Authorization", "Bearer " + accessToken)
             .field("type", "Gym")
-            .field("description", "base controller test post")
+            .field("notes", "base controller test post")
+            .field("trainingLength", "30")
             .field("city", "herzliya")
             .attach("picture", testImage);
 
@@ -119,7 +120,8 @@ describe("BaseController.post tests", () => {
             .post("/posts")
             .set("Authorization", "Bearer " + accessToken)
             .field("type", "Gym")
-            .field("description", "should fail")
+            .field("notes", "should fail")
+            .field("trainingLength", "30")
             .field("city", "herzliya")
             .attach("picture", testImage);
 
@@ -169,4 +171,3 @@ describe("BaseController.deleteById tests", () => {
         await mongoose.connect(config.dbUrl);
     });
 });
-

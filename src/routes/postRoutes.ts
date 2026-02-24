@@ -28,9 +28,9 @@ import authMiddleware from "../middlewares/authMiddleware";
  *     Post:
  *       type: object
  *       required:
- *         - description
  *         - TrainingType
  *         - city
+ *         - trainingLength
  *       properties:
  *         _id:
  *           type: string
@@ -41,6 +41,15 @@ import authMiddleware from "../middlewares/authMiddleware";
  *         description:
  *           type: string
  *           description: The post description
+ *         notes:
+ *           type: string
+ *           description: Free-text notes shared with the AI personal trainer
+ *         caloriesSummary:
+ *           type: string
+ *           description: AI generated calorie estimate for the workout
+ *         aiTips:
+ *           type: string
+ *           description: AI generated coaching tip for this workout
  *         image:
  *           type: string
  *           format: binary
@@ -48,6 +57,9 @@ import authMiddleware from "../middlewares/authMiddleware";
  *         city:
  *           type: string
  *           description: The post city
+ *         trainingLength:
+ *           type: number
+ *           description: Duration of the workout in minutes
  *         likes:
  *           type: array
  *           items:
@@ -61,8 +73,12 @@ import authMiddleware from "../middlewares/authMiddleware";
  *         _id: "64f0b9c123abc456def78901"
  *         TrainingType: 'Gym'
  *         description: 'Yesterday I went to this gym and it was crazy'
+ *         notes: 'Felt strong but legs were heavy after the sprints.'
+ *         caloriesSummary: 'You burn: 320-360 in this training'
+ *         aiTips: 'Add a longer cool-down walk to flush the lactic acid.'
  *         image: 'image-file.jpg'
  *         city: 'Tel Aviv'
+ *         trainingLength: 45
  *         likes: ["64f0b8a123abc456def12345"]
  *         comments: []
  */
@@ -238,6 +254,7 @@ router.get(
  *             required:
  *               - type
  *               - city
+ *               - trainingLength
  *             properties:
  *               type:
  *                 type: string
@@ -262,12 +279,15 @@ router.get(
  *                   - Jumping Rope
  *                   - Hiking
  *                   - Tabata
- *               description:
+ *               notes:
  *                 type: string
- *                 description: Post description
+ *                 description: Notes for the AI personal trainer
  *               city:
  *                 type: string
  *                 description: City where the workout was done
+ *               trainingLength:
+ *                 type: number
+ *                 description: Workout duration in minutes
  *               image:
  *                 type: string
  *                 format: binary

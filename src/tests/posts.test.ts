@@ -50,8 +50,9 @@ afterAll(async () => {
 
 const post: Partial<IPost> = {
   type: "Gym",
-  description: "test",
+  notes: "test notes",
   city: "herzliya",
+  trainingLength: 45,
   user: user._id,
   likes: [],
 };
@@ -62,7 +63,8 @@ describe("post tests", () => {
       .post("/posts")
       .set("Authorization", "Bearer " + accessToken)
       .field("type", post.type!!)
-      .field("description", post.description!!)
+      .field("notes", post.notes!!)
+      .field("trainingLength", post.trainingLength!!.toString())
       .field("city", post.city!!)
       .field("user", post.user!!)
       .field("likes", post.likes!!)
@@ -74,7 +76,7 @@ describe("post tests", () => {
     expect(response.statusCode).toBe(201);
     expect(response.body.user).toBe(user._id);
     expect(response.body.type).toBe(post.type);
-    expect(response.body.description).toBe(post.description);
+    expect(response.body.notes).toBe(post.notes);
     expect(response.body.image).toBeDefined();
     expect(response.body.city).toBe(post.city);
     expect(response.body.comments).toStrictEqual([]);
@@ -85,7 +87,8 @@ describe("post tests", () => {
       .post("/posts")
       .set("Authorization", "Bearer " + accessToken)
       .field("type", post.type!!)
-      .field("description", post.description!!)
+      .field("notes", post.notes!!)
+      .field("trainingLength", post.trainingLength!!.toString())
       .field("city", post.city!!)
       .field("user", post.user!!);
 
@@ -94,7 +97,7 @@ describe("post tests", () => {
     expect(response.statusCode).toBe(201);
     expect(response.body.user).toBe(user._id);
     expect(response.body.type).toBe(post.type);
-    expect(response.body.description).toBe(post.description);
+    expect(response.body.notes).toBe(post.notes);
     expect(response.body.image).not.toBeDefined();
     expect(response.body.city).toBe(post.city);
     expect(response.body.comments).toStrictEqual([]);
@@ -113,7 +116,7 @@ describe("post tests", () => {
     expect(response.statusCode).toBe(200);
     expect(response.body.user._id).toBe(user._id);
     expect(response.body.type).toBe(post.type);
-    expect(response.body.description).toBe(post.description);
+    expect(response.body.notes).toBe(post.notes);
     expect(response.body.image).toBeDefined();
     expect(response.body.city).toBe(post.city);
     expect(response.body.comments).toStrictEqual([]);
@@ -353,7 +356,8 @@ describe("Post Database Error tests", () => {
       .post("/posts")
       .set("Authorization", "Bearer " + accessToken)
       .field("type", "Gym")
-      .field("description", "test for comment error")
+      .field("notes", "test for comment error")
+      .field("trainingLength", "30")
       .field("city", "herzliya")
       .attach("picture", testImage);
 
@@ -378,7 +382,8 @@ describe("Post Database Error tests", () => {
       .post("/posts")
       .set("Authorization", "Bearer " + accessToken)
       .field("type", "Gym")
-      .field("description", "test for like error")
+      .field("notes", "test for like error")
+      .field("trainingLength", "30")
       .field("city", "herzliya")
       .attach("picture", testImage);
 
@@ -403,7 +408,8 @@ describe("Post Database Error tests", () => {
       .post("/posts")
       .set("Authorization", "Bearer " + accessToken)
       .field("type", "Gym")
-      .field("description", "test for remove like error")
+      .field("notes", "test for remove like error")
+      .field("trainingLength", "30")
       .field("city", "herzliya")
       .attach("picture", testImage);
 
