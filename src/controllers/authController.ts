@@ -54,8 +54,23 @@ const register = async (req: Request, res: Response) => {
       profileImage: uploadResult.file?.filename,
     });
 
+    // Auto sign-in: issue tokens so the client can skip a separate login call.
+    const options = {
+      expiresIn: config.jwtExpiration,
+    } as jwt.SignOptions;
+
+    const accessToken = jwt.sign({ _id: user._id }, config.jwtSecret, options);
+    const refreshToken = jwt.sign({ _id: user._id }, config.jwtRefreshSecret);
+
+    user.refreshTokens = [refreshToken];
+    await user.save();
+
     logger.info("new user added to db");
-    return res.status(201).send(user);
+    return res.status(201).send({
+      user: user,
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+    });
   } catch (err) {
     logger.error("error while trying to register");
     return res.status(500).send("error while trying to register");
